@@ -2,7 +2,7 @@
 // cache en secours pour que l'appli s'ouvre sans connexion.
 // Aucune donnée du carnet ne passe ici : elles restent dans le navigateur.
 var CACHE = "carnet-v1";
-var FICHIERS = ["/", "/index.html", "/manifest.json", "/static/icone.png"];
+var FICHIERS = ["./", "index.html", "manifest.json", "static/icone.png"];
 
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FICHIERS); }));
@@ -24,7 +24,7 @@ self.addEventListener("fetch", function (e) {
       caches.open(CACHE).then(function (c) { c.put(e.request, copie); });
       return r;
     }).catch(function () {
-      return caches.match(e.request).then(function (r) { return r || caches.match("/"); });
+      return caches.match(e.request).then(function (r) { return r || caches.match("./"); });
     })
   );
 });

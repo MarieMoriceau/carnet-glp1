@@ -10,9 +10,11 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Carnet">
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/static/icone.png">
-<link rel="icon" href="/static/icone.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="static/icone.png">
+<link rel="icon" href="static/icone.png">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+<meta name="referrer" content="no-referrer">
 <style>
   :root{
     --ink:#16242F; --ink-soft:#5A6E7A; --paper:#F1F3F2; --card:#FBFCFB;
@@ -155,8 +157,15 @@
   </div>
 
   <div class="sheet">
+    <h2>Pourquoi ce carnet</h2>
+    <p class="txt">Je l'ai fabriqué pour mon propre traitement. En consultation, j'avais du mal à me souvenir
+      de ce que j'avais mangé le jour des nausées, ou de la date exacte d'un vertige. Noter chaque jour a tout changé :
+      on repère ce qui passe mal, et le rendez-vous chez le médecin devient une vraie discussion.</p>
+    <p class="txt">Je le partage gratuitement, tel quel. Pas de pub, pas d'inscription, et je ne vois rien de ce que tu y écris.</p>
+  </div>
+
+  <div class="sheet">
     <h2>Avant de commencer</h2>
-    <p class="txt">Ce carnet sert à noter ce que tu manges et ce que tu ressens, pour en parler avec ton médecin.</p>
     <p class="txt"><b>Tes données restent sur ce téléphone.</b> Pas de compte, pas de serveur, personne d'autre n'y a accès.
       Revers de la médaille : si tu changes de téléphone ou vides ton navigateur, tout disparaît,
       sauf si tu as fait une sauvegarde.</p>
@@ -317,8 +326,25 @@
       <button class="btn danger" id="effacer">Effacer toutes mes données</button>
     </div>
 
-    <p class="small">Carnet : outil de suivi personnel, sans compte ni serveur. Aucune donnée n'est envoyée sur Internet.
-      Ce n'est pas un dispositif médical.</p>
+    <h3>Faire passer le mot</h3>
+    <div class="sheet">
+      <p class="txt">Quelqu'un autour de toi commence un traitement ? Envoie-lui le lien. Ton carnet à toi, lui, ne part pas avec.</p>
+      <button class="btn light" id="partager">Partager le lien de l'appli</button>
+      <div class="flash" id="p-flash"></div>
+    </div>
+
+    <details>
+      <summary>À propos et mentions légales</summary>
+      <p class="small">Carnet est un outil de suivi personnel, gratuit, développé par une particulière et mis à disposition tel quel.
+        Aucun compte, aucun cookie, aucune mesure d'audience : les données saisies restent dans le navigateur de l'appareil
+        et ne sont jamais transmises, ni à l'éditrice ni à quiconque. Chaque personne reste seule responsable de son carnet
+        et de ses sauvegardes.</p>
+      <p class="small">Ce n'est pas un dispositif médical. L'appli ne pose aucun diagnostic, ne donne aucun conseil et ne remplace
+        pas l'avis d'un professionnel de santé. En cas de symptôme inquiétant, appelle ton médecin ou le 15.</p>
+      <p class="small">Wegovy et Mounjaro sont des marques de leurs propriétaires respectifs. Carnet n'a aucun lien avec
+        les laboratoires qui les commercialisent.</p>
+      <p class="small">Hébergement : Render Services, Inc. (render.com).</p>
+    </details>
   </section>
 </div>
 
@@ -337,7 +363,8 @@
 
 /* ================= constantes ================= */
 var CLE = "carnet-glp1-v1";
-var SYMPTOMES = ["Aigreurs", "Nausées", "Ballonnements", "Fatigue", "Constipation", "Lourdeur", "Rien à signaler"];
+var SYMPTOMES = ["Nausées", "Vomissements", "Aigreurs", "Ballonnements", "Lourdeur", "Constipation", "Diarrhée",
+                 "Fatigue", "Vertiges", "Maux de tête", "Rien à signaler"];
 var INTENSITES = ["Légère", "Gênante", "Forte"];
 var STATUTS = ["Confirmé", "Suspect", "À tester", "Toléré"];
 var CATEGORIES = ["Gras saturé", "Épices", "Acidité", "Fibres", "Lactose", "Caféine", "Sucre", "Volume", "Autre"];
@@ -789,6 +816,22 @@ document.getElementById("fichier").addEventListener("change", function (e) {
   lecteur.readAsText(f);
 });
 
+/* ================= partager l'appli ================= */
+document.getElementById("partager").addEventListener("click", function () {
+  var url = location.origin + location.pathname;
+  var flash = document.getElementById("p-flash");
+  var texte = "Un carnet de suivi gratuit pour les traitements GLP-1 (Wegovy, Mounjaro…). Tout reste sur ton téléphone.";
+  if (navigator.share) {
+    navigator.share({ title: "Carnet", text: texte, url: url }).catch(function () {});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function () {
+      flash.className = "flash ok"; flash.textContent = "Lien copié : " + url;
+    }).catch(function () { flash.className = "flash"; flash.textContent = url; });
+  } else {
+    flash.className = "flash"; flash.textContent = url;
+  }
+});
+
 /* ================= export médecin ================= */
 function preparerRapport() {
   var du = document.getElementById("r-du").value || E.reglages.debut;
@@ -939,7 +982,7 @@ window.addEventListener("pageshow", function (e) {
 
 // hors ligne : l'appli s'ouvre même sans réseau
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/sw.js").catch(function () {});
+  navigator.serviceWorker.register("sw.js").catch(function () {});
 }
 </script>
 </body>
