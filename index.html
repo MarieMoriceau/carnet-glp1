@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carnet</title>
+<meta name="description" content="Carnet de suivi personnel sous traitement GLP-1. Les données restent sur l'appareil.">
+<meta name="theme-color" content="#16242F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Carnet">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/static/icone.png">
+<link rel="icon" href="/static/icone.png">
+<style>
+  :root{
+    --ink:#16242F; --ink-soft:#5A6E7A; --paper:#F1F3F2; --card:#FBFCFB;
+    --rule:#CBD5D6; --rule-soft:#E2E8E7; --alert:#B03F35; --calm:#4A7A64; --dose:#2C6382;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);line-height:1.5;
+    font-family:"Avenir Next","Segoe UI",system-ui,sans-serif;
+    padding:20px 16px calc(96px + env(safe-area-inset-bottom));
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:640px;margin:0 auto}
+  [hidden]{display:none!important}
+  h1{font-family:"Iowan Old Style",Palatino,Georgia,serif;font-size:27px;font-weight:600;
+     letter-spacing:-.015em;margin:0 0 2px}
+  .sub{color:var(--ink-soft);font-size:14px;margin:0 0 18px}
+  .status{display:flex;border:1px solid var(--rule);background:var(--card);
+          border-radius:3px;margin-bottom:22px;overflow:hidden}
+  .stat{flex:1;padding:11px 13px;border-right:1px solid var(--rule-soft);min-width:0}
+  .stat:last-child{border-right:0}
+  .stat .k{font-size:11px;color:var(--ink-soft)}
+  .stat .v{font-family:"Iowan Old Style",Palatino,Georgia,serif;font-size:19px;margin-top:1px;
+           white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stat .v.dose{color:var(--dose)}
+  .stat .d{font-size:11px;color:var(--ink-soft)}
+  .sheet{background:var(--card);border:1px solid var(--rule);border-radius:3px;
+         padding:18px 16px 16px;margin-bottom:26px}
+  h2{font-family:"Iowan Old Style",Palatino,Georgia,serif;font-size:18px;font-weight:600;margin:0 0 4px}
+  .deja{font-size:13px;color:var(--calm);margin:0 0 14px}
+  .vide{font-size:13px;color:var(--ink-soft);margin:0 0 14px}
+  label{display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:4px}
+  input,textarea,select{width:100%;font-family:inherit;font-size:16px;color:var(--ink);background:#fff;
+    border:1px solid var(--rule);border-radius:2px;padding:9px 10px}
+  select{appearance:none;-webkit-appearance:none}
+  textarea{resize:vertical;min-height:46px}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--dose);outline-offset:1px}
+  input[type=checkbox]{width:auto;margin:3px 8px 0 0;flex-shrink:0}
+  .row{margin-bottom:12px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-family:inherit;font-size:14px;padding:8px 13px;border:1px solid var(--rule);
+        background:#fff;color:var(--ink-soft);border-radius:100px;cursor:pointer}
+  .chip.on{background:var(--alert);border-color:var(--alert);color:#fff}
+  .chip.on.none{background:var(--calm);border-color:var(--calm)}
+  .sev{display:flex;gap:7px}
+  .sev button{font-family:inherit;font-size:14px;flex:1;padding:9px 4px;border:1px solid var(--rule);
+    background:#fff;color:var(--ink-soft);border-radius:2px;cursor:pointer}
+  .sev button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  details{margin-bottom:12px}
+  summary{font-size:13px;color:var(--ink-soft);cursor:pointer;padding:4px 0}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+  .g4 label{font-size:11.5px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .save,.btn{font-family:inherit;font-size:16px;width:100%;margin-top:8px;padding:13px;
+    background:var(--ink);color:#fff;border:0;border-radius:2px;cursor:pointer}
+  .btn.light{background:#fff;color:var(--ink);border:1px solid var(--rule)}
+  .btn.danger{background:#fff;color:var(--alert);border:1px solid var(--alert)}
+  .save:disabled{opacity:.5}
+  .flash{font-size:13.5px;margin-top:10px;text-align:center;min-height:18px}
+  .flash.ok{color:var(--calm)} .flash.ko{color:var(--alert)}
+  .warn{background:#F6E9E7;border:1px solid var(--alert);color:var(--alert);
+        padding:11px 13px;border-radius:3px;font-size:13.5px;margin-bottom:20px}
+  .info{background:#E6EEF2;border:1px solid #B9CCD8;color:var(--ink);
+        padding:11px 13px;border-radius:3px;font-size:13.5px;margin-bottom:20px}
+  .info .btn{font-size:14px;padding:9px;margin-top:9px}
+  h3{font-family:"Iowan Old Style",Palatino,Georgia,serif;font-size:19px;font-weight:600;margin:30px 0 10px}
+  h3:first-child{margin-top:0}
+  p.txt{font-size:14.5px;margin:0 0 12px}
+  .bar{display:flex;align-items:center;gap:9px;margin-bottom:6px;font-size:14px}
+  .bar .lbl{width:112px;flex-shrink:0}
+  .bar .track{flex:1;height:8px;background:var(--rule-soft);border-radius:100px;overflow:hidden}
+  .bar .fill{height:100%;background:var(--alert)}
+  .bar .n{width:24px;text-align:right;color:var(--ink-soft);font-size:13px}
+  .recap{background:var(--card);border:1px solid var(--rule);border-radius:3px;padding:15px 16px}
+  table.t{width:100%;border-collapse:collapse;font-size:13.5px}
+  table.t th{text-align:left;font-weight:500;color:var(--ink-soft);font-size:12px;padding:4px 6px 6px 0;
+             border-bottom:1px solid var(--rule)}
+  table.t td{padding:6px 6px 6px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+  .day{padding:14px 0;border-top:1px solid var(--rule-soft);cursor:pointer}
+  .day b{font-size:15px}
+  .day .meta{color:var(--ink-soft);font-size:13px;margin-bottom:5px}
+  .meal{font-size:14px;margin-bottom:2px;white-space:pre-line}
+  .meal i{font-style:normal;color:var(--ink-soft);display:inline-block;min-width:70px}
+  .tags{margin-top:6px;display:flex;flex-wrap:wrap;gap:5px}
+  .tag{font-size:12.5px;padding:3px 9px;border-radius:100px;background:#F3DEDB;color:var(--alert)}
+  .tag.ok{background:#DFEAE4;color:var(--calm)}
+  .tag.neutre{background:var(--rule-soft);color:var(--ink-soft)}
+  .note{font-size:13.5px;color:var(--ink-soft);margin-top:5px;font-style:italic;white-space:pre-line}
+  .col{margin-bottom:18px}
+  .col h4{font-size:13px;font-weight:600;margin:0 0 6px;display:flex;justify-content:space-between}
+  .col h4 span{color:var(--ink-soft);font-weight:400}
+  .trig{background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--rule);
+        border-radius:3px;padding:10px 12px;margin-bottom:6px}
+  .trig.Confirmé{border-left-color:var(--alert)} .trig.Suspect{border-left-color:#C98A2E}
+  .trig.Toléré{border-left-color:var(--calm)}  .trig[class*="tester"]{border-left-color:var(--dose)}
+  .trig .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .trig b{font-size:15px}
+  .trig .m{font-size:12.5px;color:var(--ink-soft)}
+  .trig .acts{display:flex;gap:6px;margin-top:8px}
+  .trig .acts select{font-size:13px;padding:5px 8px}
+  .trig .acts button{font-family:inherit;font-size:13px;padding:5px 10px;border:1px solid var(--rule);
+        background:#fff;color:var(--alert);border-radius:2px;cursor:pointer;flex-shrink:0}
+  .pal{display:grid;grid-template-columns:1fr 1fr 34px;gap:6px;margin-bottom:6px}
+  .pal button{font-family:inherit;border:1px solid var(--rule);background:#fff;color:var(--alert);
+              border-radius:2px;cursor:pointer;font-size:16px}
+  .check{display:flex;align-items:flex-start;font-size:14px;margin-bottom:10px;color:var(--ink)}
+  .small{font-size:12.5px;color:var(--ink-soft)}
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--rule);
+    display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+  nav.tabs .in{display:flex;max-width:640px;width:100%}
+  nav.tabs button{flex:1;font-family:inherit;font-size:12.5px;color:var(--ink-soft);background:none;border:0;
+    padding:11px 2px 12px;cursor:pointer;border-top:2px solid transparent;margin-top:-1px}
+  nav.tabs button.on{color:var(--ink);border-top-color:var(--ink);font-weight:600}
+
+  /* ---- rapport imprimable ---- */
+  #rapport{display:none}
+  @media print{
+    @page{margin:14mm}
+    body{background:#fff;padding:0;font-size:11pt}
+    body.imprime .wrap, body.imprime nav.tabs{display:none!important}
+    body.imprime #rapport{display:block}
+    #rapport h1{font-size:20pt}
+    #rapport h3{font-size:13pt;margin:18px 0 6px;page-break-after:avoid}
+    #rapport table.t{font-size:9.5pt} #rapport td{white-space:pre-line}
+    #rapport tr{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= ACCUEIL (premier lancement) ================= -->
+<div class="wrap" id="accueil" hidden>
+  <h1>Carnet</h1>
+  <p class="sub">Suivi quotidien sous traitement GLP-1</p>
+
+  <div class="warn" id="ios-safari" hidden>
+    Tu es dans Safari. Sur iPhone, installe d'abord l'appli : bouton <b>Partager</b> puis
+    <b>Sur l'écran d'accueil</b>, et ouvre-la depuis l'icône. Sinon ton carnet restera coincé dans Safari
+    et tu ne le retrouveras pas dans l'appli.
+  </div>
+
+  <div class="sheet">
+    <h2>Avant de commencer</h2>
+    <p class="txt">Ce carnet sert à noter ce que tu manges et ce que tu ressens, pour en parler avec ton médecin.</p>
+    <p class="txt"><b>Tes données restent sur ce téléphone.</b> Pas de compte, pas de serveur, personne d'autre n'y a accès.
+      Revers de la médaille : si tu changes de téléphone ou vides ton navigateur, tout disparaît,
+      sauf si tu as fait une sauvegarde.</p>
+    <p class="txt small">Ce carnet est un outil de suivi personnel. Ce n'est pas un dispositif médical, il ne donne
+      aucun conseil et ne remplace pas l'avis de ton médecin. Les paliers affichés sont ceux que tu saisis.</p>
+
+    <div class="row"><label for="a-traitement">Traitement</label>
+      <select id="a-traitement"></select></div>
+    <div class="row"><label for="a-debut">Date de la première injection</label>
+      <input type="date" id="a-debut"></div>
+    <div class="row"><label for="a-prenom">Prénom (facultatif, apparaît sur l'export pour le médecin)</label>
+      <input type="text" id="a-prenom" autocomplete="given-name"></div>
+
+    <label class="check"><input type="checkbox" id="a-ok">
+      J'ai compris que ce carnet n'est pas un avis médical et que c'est à moi de faire des sauvegardes.</label>
+
+    <button class="btn" id="a-go">Commencer mon carnet</button>
+    <div class="flash ko" id="a-flash"></div>
+    <button class="btn light" id="a-restaurer">J'ai déjà une sauvegarde</button>
+  </div>
+</div>
+
+<!-- ================= APPLI ================= -->
+<div class="wrap" id="appli" hidden>
+
+  <!-- ---------- Aujourd'hui ---------- -->
+  <section id="tab-jour">
+    <h1>Carnet</h1>
+    <p class="sub" id="j-libelle"></p>
+
+    <div class="warn" id="stockage-ko" hidden>
+      Ce navigateur refuse d'enregistrer des données (navigation privée ?). Rien ne sera conservé.
+    </div>
+    <div class="info" id="rappel-sauvegarde" hidden>
+      <span id="rappel-texte"></span>
+      <button class="btn" data-action="sauvegarder">Sauvegarder maintenant</button>
+    </div>
+
+    <div class="status">
+      <div class="stat"><div class="k">Jour</div><div class="v" id="s-jour"></div></div>
+      <div class="stat"><div class="k">Palier</div><div class="v dose" id="s-palier"></div></div>
+      <div class="stat"><div class="k">Suivant</div><div class="v" id="s-suivant"></div>
+        <div class="d" id="s-suivant-date"></div></div>
+    </div>
+
+    <div class="sheet">
+      <h2 id="f-titre"></h2>
+      <p id="f-etat"></p>
+      <form id="f">
+        <div class="row"><label for="date">Date</label>
+          <input type="date" id="date" name="date"></div>
+        <div class="row"><label for="matin">Matin</label><textarea id="matin" name="matin"></textarea></div>
+        <div class="row"><label for="midi">Midi</label><textarea id="midi" name="midi"></textarea></div>
+        <div class="row"><label for="soir">Soir</label><textarea id="soir" name="soir"></textarea></div>
+        <div class="row"><label for="collation">Collation</label><textarea id="collation" name="collation"></textarea></div>
+
+        <div class="row"><label>Symptômes</label><div class="chips" id="chips"></div></div>
+        <div class="row"><label>Intensité</label><div class="sev" id="sev"></div></div>
+
+        <div class="row"><label for="note">Note</label>
+          <textarea id="note" name="note" placeholder="Heure du symptôme, aliment suspect, transit…"></textarea></div>
+
+        <details id="mesures">
+          <summary>Mensurations (une fois par mois)</summary>
+          <div class="g4">
+            <div><label for="poitrine">Poitrine</label><input type="number" inputmode="decimal" step="0.5" id="poitrine"></div>
+            <div><label for="taille">Taille</label><input type="number" inputmode="decimal" step="0.5" id="taille"></div>
+            <div><label for="hanches">Hanches</label><input type="number" inputmode="decimal" step="0.5" id="hanches"></div>
+            <div><label for="cuisse">Cuisse</label><input type="number" inputmode="decimal" step="0.5" id="cuisse"></div>
+          </div>
+        </details>
+
+        <button type="submit" class="save">Enregistrer</button>
+        <div class="flash" id="flash"></div>
+      </form>
+    </div>
+
+    <h3>Bilan des 4 dernières semaines</h3>
+    <div class="recap" id="bilan"></div>
+  </section>
+
+  <!-- ---------- Journal ---------- -->
+  <section id="tab-journal" hidden>
+    <h1>Journal</h1>
+    <p class="sub">Touche une journée pour la modifier.</p>
+    <div id="journal"></div>
+  </section>
+
+  <!-- ---------- Déclencheurs ---------- -->
+  <section id="tab-declencheurs" hidden>
+    <h1>Déclencheurs</h1>
+    <p class="sub">Les aliments que tu soupçonnes, et ce que tu en as conclu.</p>
+
+    <div class="sheet">
+      <h2>Ajouter un aliment</h2>
+      <form id="fd">
+        <div class="row"><label for="d-aliment">Aliment</label><input type="text" id="d-aliment" required></div>
+        <div class="g2 row">
+          <div><label for="d-statut">Statut</label><select id="d-statut"></select></div>
+          <div><label for="d-categorie">Catégorie</label><select id="d-categorie"></select></div>
+        </div>
+        <div class="g2 row">
+          <div><label for="d-symptome">Symptôme associé</label><select id="d-symptome"></select></div>
+          <div><label for="d-observe">Observé le</label><input type="date" id="d-observe"></div>
+        </div>
+        <div class="row"><label for="d-pourquoi">Pourquoi</label>
+          <textarea id="d-pourquoi" placeholder="Ex. : nausées 2 h après, deux fois cette semaine"></textarea></div>
+        <button class="btn" type="submit">Ajouter</button>
+      </form>
+    </div>
+    <div id="declencheurs"></div>
+  </section>
+
+  <!-- ---------- Mes données ---------- -->
+  <section id="tab-reglages" hidden>
+    <h1>Mes données</h1>
+    <p class="sub">Tout est stocké sur cet appareil, nulle part ailleurs.</p>
+
+    <h3>Pour le médecin</h3>
+    <div class="sheet">
+      <p class="txt">Un récapitulatif propre à imprimer ou à enregistrer en PDF.</p>
+      <div class="g2 row">
+        <div><label for="r-du">Du</label><input type="date" id="r-du"></div>
+        <div><label for="r-au">Au</label><input type="date" id="r-au"></div>
+      </div>
+      <button class="btn" id="r-go">Préparer l'export</button>
+      <p class="small" style="margin:8px 0 0">Sur iPhone : dans la fenêtre d'impression, bouton Partager puis
+        « Enregistrer dans Fichiers » pour obtenir le PDF.</p>
+    </div>
+
+    <h3>Sauvegarde</h3>
+    <div class="sheet">
+      <p class="txt" id="derniere-sauvegarde"></p>
+      <button class="btn" data-action="sauvegarder">Sauvegarder mon carnet</button>
+      <button class="btn light" id="restaurer">Restaurer une sauvegarde</button>
+      <p class="small" style="margin:8px 0 0">Range le fichier dans iCloud Drive, Google Drive ou envoie-le-toi par mail.
+        C'est ce fichier qui te permettra de retrouver ton carnet sur un autre téléphone.</p>
+    </div>
+
+    <h3>Mon traitement</h3>
+    <div class="sheet">
+      <div class="row"><label for="g-prenom">Prénom</label><input type="text" id="g-prenom"></div>
+      <div class="g2 row">
+        <div><label for="g-traitement">Traitement</label><select id="g-traitement"></select></div>
+        <div><label for="g-debut">Première injection</label><input type="date" id="g-debut"></div>
+      </div>
+      <label>Paliers (date de début et dose, à ajuster selon ta prescription)</label>
+      <div id="paliers"></div>
+      <button class="btn light" id="p-ajout" type="button">+ Ajouter un palier</button>
+      <button class="btn light" id="p-regen" type="button">Recalculer depuis la date de début</button>
+      <button class="btn" id="g-save" type="button">Enregistrer les réglages</button>
+      <div class="flash" id="g-flash"></div>
+    </div>
+
+    <h3>Zone rouge</h3>
+    <div class="sheet">
+      <p class="txt">Efface tout le carnet de cet appareil. Fais une sauvegarde avant si tu veux le garder.</p>
+      <button class="btn danger" id="effacer">Effacer toutes mes données</button>
+    </div>
+
+    <p class="small">Carnet : outil de suivi personnel, sans compte ni serveur. Aucune donnée n'est envoyée sur Internet.
+      Ce n'est pas un dispositif médical.</p>
+  </section>
+</div>
+
+<nav class="tabs" id="nav" hidden><div class="in">
+  <button data-tab="jour" class="on">Aujourd'hui</button>
+  <button data-tab="journal">Journal</button>
+  <button data-tab="declencheurs">Déclencheurs</button>
+  <button data-tab="reglages">Mes données</button>
+</div></nav>
+
+<input type="file" id="fichier" accept=".json,application/json" hidden>
+<div id="rapport"></div>
+
+<script>
+"use strict";
+
+/* ================= constantes ================= */
+var CLE = "carnet-glp1-v1";
+var SYMPTOMES = ["Aigreurs", "Nausées", "Ballonnements", "Fatigue", "Constipation", "Lourdeur", "Rien à signaler"];
+var INTENSITES = ["Légère", "Gênante", "Forte"];
+var STATUTS = ["Confirmé", "Suspect", "À tester", "Toléré"];
+var CATEGORIES = ["Gras saturé", "Épices", "Acidité", "Fibres", "Lactose", "Caféine", "Sucre", "Volume", "Autre"];
+var REPAS = [["matin", "Matin"], ["midi", "Midi"], ["soir", "Soir"], ["collation", "Collation"]];
+var MESURES = [["poitrine", "Poitrine"], ["taille", "Taille"], ["hanches", "Hanches"], ["cuisse", "Cuisse"]];
+var MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+var JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+
+// schémas d'escalade standard : une dose toutes les 4 semaines
+var TRAITEMENTS = {
+  wegovy:   { nom: "Wegovy (sémaglutide)",   doses: ["0,25 mg", "0,5 mg", "1 mg", "1,7 mg", "2,4 mg"] },
+  mounjaro: { nom: "Mounjaro (tirzépatide)", doses: ["2,5 mg", "5 mg", "7,5 mg", "10 mg", "12,5 mg", "15 mg"] },
+  autre:    { nom: "Autre / personnalisé",   doses: [""] }
+};
+
+/* ================= état ================= */
+var E = null;            // tout le carnet
+var stockageOK = true;
+var symptomes = [], intensite = "";
+
+function charger() {
+  try { E = JSON.parse(localStorage.getItem(CLE)); } catch (e) { E = null; stockageOK = false; }
+}
+function ecrire() {
+  try { localStorage.setItem(CLE, JSON.stringify(E)); return true; }
+  catch (e) { stockageOK = false; return false; }
+}
+
+/* ================= dates ================= */
+function pad(n) { return (n < 10 ? "0" : "") + n; }
+function iso(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+function lire(s) { var p = s.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function ajoute(s, jours) { var d = lire(s); d.setDate(d.getDate() + jours); return iso(d); }
+function ecart(a, b) { return Math.round((lire(b) - lire(a)) / 86400000); }
+function aujourdhui() { return iso(new Date()); }
+function libelle(s) { var d = lire(s); return JOURS[d.getDay()] + " " + d.getDate() + " " + MOIS[d.getMonth()]; }
+function court(s) { var d = lire(s); return d.getDate() + " " + MOIS[d.getMonth()]; }
+function cap(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
+function esc(t) {
+  return String(t == null ? "" : t).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+/* ================= paliers ================= */
+function genererPaliers(traitement, debut) {
+  return TRAITEMENTS[traitement].doses.map(function (dose, i) {
+    return { date: ajoute(debut, i * 28), dose: dose };
+  });
+}
+function paliersTries() {
+  return E.reglages.paliers.filter(function (p) { return p.date; })
+    .slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+}
+function palierDe(jour) {
+  var ps = paliersTries(), courant = null, suivant = null;
+  ps.forEach(function (p) {
+    if (p.date <= jour) courant = p;
+    else if (!suivant) suivant = p;
+  });
+  return { courant: courant, suivant: suivant };
+}
+function jourN(jour) { return ecart(E.reglages.debut, jour) + 1; }
+function estInjection(jour) {
+  var n = ecart(E.reglages.debut, jour);
+  return n >= 0 && n % 7 === 0;
+}
+
+/* ================= navigation ================= */
+function onglet(nom) {
+  ["jour", "journal", "declencheurs", "reglages"].forEach(function (t) {
+    document.getElementById("tab-" + t).hidden = (t !== nom);
+  });
+  document.querySelectorAll("nav.tabs button").forEach(function (b) {
+    b.classList.toggle("on", b.dataset.tab === nom);
+  });
+  if (nom === "journal") afficherJournal();
+  if (nom === "declencheurs") afficherDeclencheurs();
+  if (nom === "reglages") afficherReglages();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav.tabs button").forEach(function (b) {
+  b.addEventListener("click", function () { onglet(b.dataset.tab); });
+});
+
+/* ================= écran Aujourd'hui ================= */
+function remplirSelect(el, valeurs, libelles) {
+  el.innerHTML = valeurs.map(function (v, i) {
+    return '<option value="' + esc(v) + '">' + esc(libelles ? libelles[i] : v) + "</option>";
+  }).join("");
+}
+
+function construireChips() {
+  document.getElementById("chips").innerHTML = SYMPTOMES.map(function (s) {
+    return '<button type="button" class="chip' + (s === "Rien à signaler" ? " none" : "") +
+      '" data-sym="' + esc(s) + '">' + esc(s) + "</button>";
+  }).join("");
+  document.getElementById("sev").innerHTML = INTENSITES.map(function (i) {
+    return '<button type="button" data-sev="' + esc(i) + '">' + esc(i) + "</button>";
+  }).join("");
+
+  document.querySelectorAll("[data-sym]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var s = b.dataset.sym;
+      if (s === "Rien à signaler") {
+        var actif = symptomes.indexOf(s) > -1;
+        symptomes = actif ? [] : [s];
+      } else {
+        symptomes = symptomes.filter(function (x) { return x !== "Rien à signaler"; });
+        var i = symptomes.indexOf(s);
+        if (i > -1) symptomes.splice(i, 1); else symptomes.push(s);
+      }
+      majChips();
+    });
+  });
+  document.querySelectorAll("[data-sev]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      intensite = (intensite === b.dataset.sev) ? "" : b.dataset.sev;
+      majChips();
+    });
+  });
+}
+function majChips() {
+  document.querySelectorAll("[data-sym]").forEach(function (b) {
+    b.classList.toggle("on", symptomes.indexOf(b.dataset.sym) > -1);
+  });
+  document.querySelectorAll("[data-sev]").forEach(function (b) {
+    b.classList.toggle("on", b.dataset.sev === intensite);
+  });
+}
+
+function afficherJour(jour) {
+  var j = E.jours[jour];
+  var p = palierDe(jour);
+
+  document.getElementById("j-libelle").textContent = cap(libelle(jour)) + (estInjection(jour) ? " · jour d'injection" : "");
+  var n = jourN(jour);
+  document.getElementById("s-jour").textContent = n > 0 ? "J+" + n : "—";
+  document.getElementById("s-palier").textContent = p.courant ? (p.courant.dose || "—") : "—";
+  document.getElementById("s-suivant").textContent = p.suivant ? (p.suivant.dose || "—") : "Entretien";
+  document.getElementById("s-suivant-date").textContent = p.suivant ? "dès le " + court(p.suivant.date) : "";
+
+  document.getElementById("f-titre").textContent = j ? "Compléter la journée" : "Consigner la journée";
+  var etat = document.getElementById("f-etat");
+  etat.className = j ? "deja" : "vide";
+  etat.textContent = j ? "Journée déjà commencée : complète ce qui manque." : "Aucune saisie pour cette date.";
+
+  document.getElementById("date").value = jour;
+  REPAS.concat([["note"]]).forEach(function (r) {
+    document.getElementById(r[0]).value = j && j[r[0]] ? j[r[0]] : "";
+  });
+  MESURES.forEach(function (m) {
+    document.getElementById(m[0]).value = j && j[m[0]] != null ? j[m[0]] : "";
+  });
+  document.getElementById("mesures").open = !!(j && MESURES.some(function (m) { return j[m[0]] != null; }));
+  symptomes = j ? (j.symptomes || []).slice() : [];
+  intensite = j ? (j.intensite || "") : "";
+  majChips();
+  document.getElementById("flash").textContent = "";
+
+  afficherBilan();
+  afficherRappel();
+}
+
+document.getElementById("date").addEventListener("change", function (e) {
+  if (e.target.value) afficherJour(e.target.value);
+});
+
+document.getElementById("f").addEventListener("submit", function (e) {
+  e.preventDefault();
+  var jour = document.getElementById("date").value || aujourdhui();
+  var j = {};
+  REPAS.concat([["note"]]).forEach(function (r) {
+    var v = document.getElementById(r[0]).value.trim();
+    if (v) j[r[0]] = v;
+  });
+  MESURES.forEach(function (m) {
+    var v = document.getElementById(m[0]).value.replace(",", ".").trim();
+    if (v !== "" && !isNaN(parseFloat(v))) j[m[0]] = parseFloat(v);
+  });
+  if (symptomes.length) j.symptomes = symptomes.slice();
+  if (intensite) j.intensite = intensite;
+
+  var flash = document.getElementById("flash");
+  var existait = !!E.jours[jour];
+  if (Object.keys(j).length === 0) {
+    delete E.jours[jour];
+  } else {
+    j.maj = new Date().toISOString();
+    E.jours[jour] = j;
+  }
+  if (ecrire()) {
+    flash.className = "flash ok";
+    flash.textContent = existait ? "Journée mise à jour" : "Journée enregistrée";
+    setTimeout(function () { afficherJour(jour); flash.textContent = existait ? "Journée mise à jour" : "Journée enregistrée"; }, 50);
+  } else {
+    flash.className = "flash ko";
+    flash.textContent = "Impossible d'enregistrer sur cet appareil";
+    document.getElementById("stockage-ko").hidden = false;
+  }
+});
+
+function afficherBilan() {
+  var depuis = ajoute(aujourdhui(), -27);
+  var compte = {};
+  SYMPTOMES.forEach(function (s) { if (s !== "Rien à signaler") compte[s] = 0; });
+  var saisis = 0;
+  Object.keys(E.jours).forEach(function (d) {
+    if (d < depuis || d > aujourdhui()) return;
+    saisis++;
+    (E.jours[d].symptomes || []).forEach(function (s) { if (s in compte) compte[s]++; });
+  });
+  var maxi = Math.max.apply(null, Object.keys(compte).map(function (k) { return compte[k]; }).concat([1]));
+  var html = Object.keys(compte).map(function (s) {
+    return '<div class="bar"><div class="lbl">' + esc(s) + '</div><div class="track"><div class="fill" style="width:' +
+      Math.round(compte[s] / maxi * 100) + '%"></div></div><div class="n">' + compte[s] + "</div></div>";
+  }).join("");
+  html += '<p class="small" style="margin:8px 0 0">' + saisis + " journée" + (saisis > 1 ? "s" : "") +
+    " renseignée" + (saisis > 1 ? "s" : "") + " sur 28 jours.</p>";
+  document.getElementById("bilan").innerHTML = html;
+}
+
+function afficherRappel() {
+  document.getElementById("stockage-ko").hidden = stockageOK;
+  var nb = Object.keys(E.jours).length;
+  var der = E.derniereSauvegarde;
+  var jours = der ? ecart(der.slice(0, 10), aujourdhui()) : null;
+  var montrer = nb >= 3 && (jours === null || jours >= 7);
+  document.getElementById("rappel-sauvegarde").hidden = !montrer;
+  if (montrer) {
+    document.getElementById("rappel-texte").textContent = jours === null
+      ? "Tu n'as encore jamais sauvegardé ton carnet. Si ce téléphone se perd, tout part avec."
+      : "Dernière sauvegarde il y a " + jours + " jours. Une petite mise à jour ?";
+  }
+}
+
+/* ================= Journal ================= */
+function blocJour(d, j, cliquable) {
+  var p = palierDe(d);
+  var html = '<div class="day"' + (cliquable ? ' data-jour="' + d + '"' : "") + ">";
+  html += "<b>" + esc(cap(libelle(d))) + "</b>";
+  html += '<div class="meta">J+' + jourN(d) + (p.courant && p.courant.dose ? " · " + esc(p.courant.dose) : "") +
+    (estInjection(d) ? " · injection" : "") + "</div>";
+  REPAS.forEach(function (r) {
+    if (j[r[0]]) html += '<div class="meal"><i>' + r[1] + "</i>" + esc(j[r[0]]) + "</div>";
+  });
+  var tags = (j.symptomes || []).map(function (s) {
+    return '<span class="tag' + (s === "Rien à signaler" ? " ok" : "") + '">' + esc(s) + "</span>";
+  });
+  if (j.intensite) tags.push('<span class="tag">' + esc(j.intensite) + "</span>");
+  var mes = MESURES.filter(function (m) { return j[m[0]] != null; })
+    .map(function (m) { return m[1] + " " + String(j[m[0]]).replace(".", ",") + " cm"; });
+  if (mes.length) tags.push('<span class="tag neutre">' + esc(mes.join(" · ")) + "</span>");
+  if (tags.length) html += '<div class="tags">' + tags.join("") + "</div>";
+  if (j.note) html += '<div class="note">' + esc(j.note) + "</div>";
+  return html + "</div>";
+}
+
+function afficherJournal() {
+  var dates = Object.keys(E.jours).sort().reverse();
+  var el = document.getElementById("journal");
+  if (!dates.length) { el.innerHTML = '<p class="sub">Aucune entrée pour l\'instant.</p>'; return; }
+  el.innerHTML = dates.map(function (d) { return blocJour(d, E.jours[d], true); }).join("");
+  el.querySelectorAll("[data-jour]").forEach(function (b) {
+    b.addEventListener("click", function () { onglet("jour"); afficherJour(b.dataset.jour); });
+  });
+}
+
+/* ================= Déclencheurs ================= */
+function afficherDeclencheurs() {
+  var el = document.getElementById("declencheurs");
+  var liste = E.declencheurs;
+  el.innerHTML = STATUTS.map(function (st) {
+    var items = liste.filter(function (t) { return t.statut === st; });
+    return '<div class="col"><h4>' + st + " <span>" + items.length + "</span></h4>" +
+      (items.length ? items.map(function (t) {
+        var meta = [t.categorie, t.symptome, t.observe ? "vu le " + court(t.observe) : ""].filter(Boolean).join(" · ");
+        return '<div class="trig ' + esc(st) + '"><div class="top"><b>' + esc(t.aliment) + "</b></div>" +
+          (meta ? '<div class="m">' + esc(meta) + "</div>" : "") +
+          (t.pourquoi ? '<div class="note">' + esc(t.pourquoi) + "</div>" : "") +
+          '<div class="acts"><select data-statut="' + t.id + '">' +
+          STATUTS.map(function (s) { return "<option" + (s === st ? " selected" : "") + ">" + s + "</option>"; }).join("") +
+          '</select><button data-suppr="' + t.id + '">Retirer</button></div></div>';
+      }).join("") : '<p class="small" style="margin:0">Rien ici.</p>') + "</div>";
+  }).join("");
+
+  el.querySelectorAll("[data-statut]").forEach(function (s) {
+    s.addEventListener("change", function () {
+      var t = E.declencheurs.find(function (x) { return x.id === s.dataset.statut; });
+      if (t) { t.statut = s.value; ecrire(); afficherDeclencheurs(); }
+    });
+  });
+  el.querySelectorAll("[data-suppr]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      if (!confirm("Retirer cet aliment de la liste ?")) return;
+      E.declencheurs = E.declencheurs.filter(function (x) { return x.id !== b.dataset.suppr; });
+      ecrire(); afficherDeclencheurs();
+    });
+  });
+}
+
+document.getElementById("fd").addEventListener("submit", function (e) {
+  e.preventDefault();
+  var aliment = document.getElementById("d-aliment").value.trim();
+  if (!aliment) return;
+  E.declencheurs.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    aliment: aliment,
+    statut: document.getElementById("d-statut").value,
+    categorie: document.getElementById("d-categorie").value,
+    symptome: document.getElementById("d-symptome").value,
+    observe: document.getElementById("d-observe").value,
+    pourquoi: document.getElementById("d-pourquoi").value.trim()
+  });
+  ecrire();
+  e.target.reset();
+  document.getElementById("d-observe").value = aujourdhui();
+  afficherDeclencheurs();
+});
+
+/* ================= Réglages ================= */
+var paliersEdit = [];
+
+function afficherPaliers() {
+  var el = document.getElementById("paliers");
+  el.innerHTML = paliersEdit.map(function (p, i) {
+    return '<div class="pal"><input type="date" data-pd="' + i + '" value="' + esc(p.date) + '">' +
+      '<input type="text" data-pv="' + i + '" value="' + esc(p.dose) + '" placeholder="Dose">' +
+      '<button type="button" data-px="' + i + '" aria-label="Supprimer">×</button></div>';
+  }).join("");
+  el.querySelectorAll("[data-pd]").forEach(function (x) {
+    x.addEventListener("change", function () { paliersEdit[+x.dataset.pd].date = x.value; });
+  });
+  el.querySelectorAll("[data-pv]").forEach(function (x) {
+    x.addEventListener("input", function () { paliersEdit[+x.dataset.pv].dose = x.value; });
+  });
+  el.querySelectorAll("[data-px]").forEach(function (x) {
+    x.addEventListener("click", function () { paliersEdit.splice(+x.dataset.px, 1); afficherPaliers(); });
+  });
+}
+
+function afficherReglages() {
+  var r = E.reglages;
+  document.getElementById("g-prenom").value = r.prenom || "";
+  document.getElementById("g-traitement").value = r.traitement;
+  document.getElementById("g-debut").value = r.debut;
+  paliersEdit = r.paliers.map(function (p) { return { date: p.date, dose: p.dose }; });
+  afficherPaliers();
+  document.getElementById("g-flash").textContent = "";
+  document.getElementById("r-du").value = r.debut;
+  document.getElementById("r-au").value = aujourdhui();
+  var der = E.derniereSauvegarde;
+  document.getElementById("derniere-sauvegarde").textContent = der
+    ? "Dernière sauvegarde : " + libelle(der.slice(0, 10)) + "."
+    : "Aucune sauvegarde pour l'instant.";
+}
+
+document.getElementById("p-ajout").addEventListener("click", function () {
+  var ps = paliersEdit.filter(function (p) { return p.date; }).map(function (p) { return p.date; }).sort();
+  paliersEdit.push({ date: ps.length ? ajoute(ps[ps.length - 1], 28) : document.getElementById("g-debut").value, dose: "" });
+  afficherPaliers();
+});
+document.getElementById("p-regen").addEventListener("click", function () {
+  var debut = document.getElementById("g-debut").value;
+  if (!debut) return;
+  if (!confirm("Remplacer les paliers par le schéma standard (une dose toutes les 4 semaines) ?")) return;
+  paliersEdit = genererPaliers(document.getElementById("g-traitement").value, debut);
+  afficherPaliers();
+});
+document.getElementById("g-save").addEventListener("click", function () {
+  var debut = document.getElementById("g-debut").value;
+  var flash = document.getElementById("g-flash");
+  if (!debut) { flash.className = "flash ko"; flash.textContent = "Indique la date de première injection"; return; }
+  E.reglages.prenom = document.getElementById("g-prenom").value.trim();
+  E.reglages.traitement = document.getElementById("g-traitement").value;
+  E.reglages.debut = debut;
+  E.reglages.paliers = paliersEdit.filter(function (p) { return p.date; });
+  if (!E.reglages.paliers.length) E.reglages.paliers = [{ date: debut, dose: "" }];
+  ecrire();
+  flash.className = "flash ok"; flash.textContent = "Réglages enregistrés";
+  afficherJour(document.getElementById("date").value || aujourdhui());
+});
+
+document.getElementById("effacer").addEventListener("click", function () {
+  if (!confirm("Effacer tout le carnet de cet appareil ? Sans sauvegarde, c'est définitif.")) return;
+  if (!confirm("Vraiment sûr·e ?")) return;
+  try { localStorage.removeItem(CLE); } catch (e) {}
+  location.reload();
+});
+
+/* ================= sauvegarde / restauration ================= */
+function sauvegarder() {
+  E.derniereSauvegarde = new Date().toISOString();
+  ecrire();
+  var nom = "carnet-" + aujourdhui() + ".json";
+  var contenu = JSON.stringify(Object.assign({ format: "carnet-glp1", version: 1 }, E), null, 2);
+  var fichier;
+  try { fichier = new File([contenu], nom, { type: "application/json" }); } catch (e) { fichier = null; }
+
+  // sur mobile, la feuille de partage permet d'enregistrer dans Fichiers / Drive ou de s'envoyer le fichier
+  if (fichier && navigator.canShare && navigator.canShare({ files: [fichier] })) {
+    navigator.share({ files: [fichier], title: nom }).then(apresSauvegarde).catch(function (err) {
+      if (err && err.name === "AbortError") return;
+      telecharger(contenu, nom);
+    });
+  } else {
+    telecharger(contenu, nom);
+  }
+}
+function telecharger(contenu, nom) {
+  var url = URL.createObjectURL(new Blob([contenu], { type: "application/json" }));
+  var a = document.createElement("a");
+  a.href = url; a.download = nom;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+  apresSauvegarde();
+}
+function apresSauvegarde() {
+  afficherRappel();
+  if (!document.getElementById("tab-reglages").hidden) afficherReglages();
+}
+document.querySelectorAll('[data-action="sauvegarder"]').forEach(function (b) {
+  b.addEventListener("click", sauvegarder);
+});
+
+function choisirFichier() { document.getElementById("fichier").click(); }
+document.getElementById("restaurer").addEventListener("click", choisirFichier);
+document.getElementById("a-restaurer").addEventListener("click", choisirFichier);
+
+document.getElementById("fichier").addEventListener("change", function (e) {
+  var f = e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  var lecteur = new FileReader();
+  lecteur.onload = function () {
+    var d;
+    try { d = JSON.parse(lecteur.result); } catch (err) { alert("Ce fichier n'est pas une sauvegarde lisible."); return; }
+    if (!d || d.format !== "carnet-glp1" || !d.reglages || !d.jours) {
+      alert("Ce fichier n'est pas une sauvegarde du Carnet."); return;
+    }
+    var nb = Object.keys(d.jours).length;
+    if (E && !confirm("Remplacer le carnet de cet appareil par cette sauvegarde (" + nb + " journées) ?")) return;
+    delete d.format; delete d.version;
+    d.declencheurs = d.declencheurs || [];
+    E = d;
+    if (ecrire()) { demarrer(); alert("Carnet restauré : " + nb + " journées."); }
+    else alert("Impossible d'enregistrer sur cet appareil (navigation privée ?).");
+  };
+  lecteur.readAsText(f);
+});
+
+/* ================= export médecin ================= */
+function preparerRapport() {
+  var du = document.getElementById("r-du").value || E.reglages.debut;
+  var au = document.getElementById("r-au").value || aujourdhui();
+  var r = E.reglages;
+  var dates = Object.keys(E.jours).filter(function (d) { return d >= du && d <= au; }).sort();
+
+  var h = "<h1>Carnet de suivi" + (r.prenom ? " — " + esc(r.prenom) : "") + "</h1>";
+  h += '<p class="sub">' + esc(TRAITEMENTS[r.traitement] ? TRAITEMENTS[r.traitement].nom : "") +
+    " · première injection le " + esc(libelle(r.debut)) + " · période du " + esc(libelle(du)) + " au " + esc(libelle(au)) +
+    " · " + dates.length + (dates.length > 1 ? " journées renseignées" : " journée renseignée") + "</p>";
+
+  // synthèse par palier
+  var ps = paliersTries();
+  h += "<h3>Symptômes par palier</h3><table class='t'><tr><th>Palier</th><th>Depuis</th><th>Jours saisis</th>" +
+    "<th>Jours avec symptômes</th><th>dont « Forte »</th><th>Symptômes les plus fréquents</th></tr>";
+  ps.forEach(function (p, i) {
+    var fin = ps[i + 1] ? ajoute(ps[i + 1].date, -1) : "9999-12-31";
+    var js = dates.filter(function (d) { return d >= p.date && d <= fin; });
+    if (!js.length) return;
+    var avec = 0, forte = 0, freq = {};
+    js.forEach(function (d) {
+      var s = (E.jours[d].symptomes || []).filter(function (x) { return x !== "Rien à signaler"; });
+      if (s.length) avec++;
+      if (E.jours[d].intensite === "Forte") forte++;
+      s.forEach(function (x) { freq[x] = (freq[x] || 0) + 1; });
+    });
+    var top = Object.keys(freq).sort(function (a, b) { return freq[b] - freq[a]; }).slice(0, 3)
+      .map(function (x) { return x + " (" + freq[x] + ")"; }).join(", ");
+    h += "<tr><td>" + esc(p.dose) + "</td><td>" + esc(court(p.date)) + "</td><td>" + js.length + "</td><td>" + avec +
+      "</td><td>" + forte + "</td><td>" + esc(top || "—") + "</td></tr>";
+  });
+  h += "</table>";
+
+  // mensurations
+  var mes = dates.filter(function (d) { return MESURES.some(function (m) { return E.jours[d][m[0]] != null; }); });
+  if (mes.length) {
+    h += "<h3>Mensurations (cm)</h3><table class='t'><tr><th>Date</th>" +
+      MESURES.map(function (m) { return "<th>" + m[1] + "</th>"; }).join("") + "</tr>";
+    mes.forEach(function (d) {
+      h += "<tr><td>" + esc(court(d)) + "</td>" + MESURES.map(function (m) {
+        var v = E.jours[d][m[0]];
+        return "<td>" + (v != null ? String(v).replace(".", ",") : "—") + "</td>";
+      }).join("") + "</tr>";
+    });
+    h += "</table>";
+  }
+
+  // déclencheurs
+  var trig = E.declencheurs.filter(function (t) { return t.statut !== "Toléré"; });
+  var tol = E.declencheurs.filter(function (t) { return t.statut === "Toléré"; });
+  if (E.declencheurs.length) {
+    h += "<h3>Aliments déclencheurs</h3><table class='t'><tr><th>Aliment</th><th>Statut</th><th>Symptôme</th><th>Pourquoi</th></tr>";
+    trig.concat(tol).forEach(function (t) {
+      h += "<tr><td>" + esc(t.aliment) + "</td><td>" + esc(t.statut) + "</td><td>" + esc(t.symptome || "—") +
+        "</td><td>" + esc(t.pourquoi || "") + "</td></tr>";
+    });
+    h += "</table>";
+  }
+
+  // journal détaillé
+  h += "<h3>Journal détaillé</h3><table class='t'><tr><th>Jour</th><th>Repas</th><th>Symptômes</th><th>Note</th></tr>";
+  dates.forEach(function (d) {
+    var j = E.jours[d], p = palierDe(d);
+    var repas = REPAS.filter(function (r) { return j[r[0]]; })
+      .map(function (r) { return "<b>" + r[1] + "</b> " + esc(j[r[0]]); }).join("<br>");
+    h += "<tr><td>" + esc(court(d)) + "<br><span class='small'>J+" + jourN(d) +
+      (p.courant && p.courant.dose ? " · " + esc(p.courant.dose) : "") + (estInjection(d) ? " · inj." : "") +
+      "</span></td><td>" + (repas || "—") + "</td><td>" + esc((j.symptomes || []).join(", ") || "—") +
+      (j.intensite ? "<br><span class='small'>" + esc(j.intensite) + "</span>" : "") + "</td><td>" + esc(j.note || "") + "</td></tr>";
+  });
+  h += "</table>";
+  h += "<p class='small' style='margin-top:14px'>Document établi par le patient à partir de son carnet de suivi personnel, le " +
+    esc(libelle(aujourdhui())) + ".</p>";
+
+  document.getElementById("rapport").innerHTML = h;
+  document.body.classList.add("imprime");
+  setTimeout(function () { window.print(); }, 100);
+}
+window.addEventListener("afterprint", function () { document.body.classList.remove("imprime"); });
+document.getElementById("r-go").addEventListener("click", preparerRapport);
+
+/* ================= premier lancement ================= */
+function afficherAccueil() {
+  document.getElementById("accueil").hidden = false;
+  document.getElementById("appli").hidden = true;
+  document.getElementById("nav").hidden = true;
+  var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  var standalone = window.navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+  document.getElementById("ios-safari").hidden = !(ios && !standalone);
+}
+
+document.getElementById("a-go").addEventListener("click", function () {
+  var debut = document.getElementById("a-debut").value;
+  var flash = document.getElementById("a-flash");
+  if (!debut) { flash.textContent = "Indique la date de ta première injection."; return; }
+  if (!document.getElementById("a-ok").checked) { flash.textContent = "Coche la case pour continuer."; return; }
+  var traitement = document.getElementById("a-traitement").value;
+  E = {
+    reglages: {
+      prenom: document.getElementById("a-prenom").value.trim(),
+      traitement: traitement,
+      debut: debut,
+      paliers: genererPaliers(traitement, debut),
+      cree: new Date().toISOString()
+    },
+    jours: {},
+    declencheurs: [],
+    derniereSauvegarde: null
+  };
+  if (!ecrire()) { flash.textContent = "Ce navigateur refuse d'enregistrer des données (navigation privée ?)."; return; }
+  demarrer();
+  if (traitement === "autre") { onglet("reglages"); }
+});
+
+/* ================= démarrage ================= */
+function demarrer() {
+  document.getElementById("accueil").hidden = true;
+  document.getElementById("appli").hidden = false;
+  document.getElementById("nav").hidden = false;
+  onglet("jour");
+  afficherJour(aujourdhui());
+}
+
+(function init() {
+  var ids = Object.keys(TRAITEMENTS), noms = ids.map(function (k) { return TRAITEMENTS[k].nom; });
+  remplirSelect(document.getElementById("a-traitement"), ids, noms);
+  remplirSelect(document.getElementById("g-traitement"), ids, noms);
+  remplirSelect(document.getElementById("d-statut"), STATUTS);
+  remplirSelect(document.getElementById("d-categorie"), [""].concat(CATEGORIES), ["—"].concat(CATEGORIES));
+  var syms = SYMPTOMES.filter(function (s) { return s !== "Rien à signaler"; });
+  remplirSelect(document.getElementById("d-symptome"), [""].concat(syms), ["—"].concat(syms));
+  document.getElementById("d-observe").value = aujourdhui();
+  construireChips();
+
+  charger();
+  // demande au navigateur de ne pas purger le carnet quand l'espace manque
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
+
+  if (E && E.reglages && E.jours) { E.declencheurs = E.declencheurs || []; demarrer(); }
+  else afficherAccueil();
+})();
+
+// iOS rouvre l'icône depuis un cache de page : on se recale sur la bonne date
+window.addEventListener("pageshow", function (e) {
+  if (e.persisted && E && E.reglages) afficherJour(document.getElementById("date").value || aujourdhui());
+});
+
+// hors ligne : l'appli s'ouvre même sans réseau
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch(function () {});
+}
+</script>
+</body>
+</html>
