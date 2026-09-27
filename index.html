@@ -164,10 +164,24 @@
     <p class="txt">Je le partage gratuitement, tel quel. Pas de pub, pas d'inscription, et je ne vois rien de ce que tu y écris.</p>
   </div>
 
+  <div class="sheet" id="installer">
+    <h2>Téléphone ou ordinateur ?</h2>
+    <p class="txt">Les deux marchent. Choisis celui que tu as le plus souvent sous la main à l'heure des repas,
+      et tiens-t'en à lui : chaque appareil garde son propre carnet, ils ne se synchronisent pas entre eux.</p>
+    <p class="txt"><b>Sur iPhone</b> : ouvre ce lien dans Safari, touche le bouton Partager (le carré avec une flèche vers le haut),
+      puis « Sur l'écran d'accueil ». L'icône Carnet apparaît comme une vraie appli. Ouvre-la toujours depuis cette icône.</p>
+    <p class="txt"><b>Sur Android</b> : ouvre ce lien dans Chrome, touche les trois points en haut à droite,
+      puis « Installer l'application » ou « Ajouter à l'écran d'accueil ».</p>
+    <p class="txt"><b>Sur ordinateur</b> : garde simplement la page dans tes favoris. Avec Chrome ou Edge, une petite icône
+      d'installation apparaît aussi dans la barre d'adresse.</p>
+    <p class="txt small">Tu veux changer d'appareil en route ? Sur l'ancien : Mes données, puis Sauvegarder.
+      Sur le nouveau : « J'ai déjà une sauvegarde ». Ton carnet te suit.</p>
+  </div>
+
   <div class="sheet">
     <h2>Avant de commencer</h2>
-    <p class="txt"><b>Tes données restent sur ce téléphone.</b> Pas de compte, pas de serveur, personne d'autre n'y a accès.
-      Revers de la médaille : si tu changes de téléphone ou vides ton navigateur, tout disparaît,
+    <p class="txt"><b>Tes données restent sur cet appareil.</b> Pas de compte, pas de serveur, personne d'autre n'y a accès.
+      Revers de la médaille : si tu changes d’appareil ou vides ton navigateur, tout disparaît,
       sauf si tu as fait une sauvegarde.</p>
     <p class="txt small">Ce carnet est un outil de suivi personnel. Ce n'est pas un dispositif médical, il ne donne
       aucun conseil et ne remplace pas l'avis de ton médecin. Les paliers affichés sont ceux que tu saisis.</p>
@@ -324,6 +338,13 @@
     <div class="sheet">
       <p class="txt">Efface tout le carnet de cet appareil. Fais une sauvegarde avant si tu veux le garder.</p>
       <button class="btn danger" id="effacer">Effacer toutes mes données</button>
+    </div>
+
+    <h3>Changer d'appareil</h3>
+    <div class="sheet">
+      <p class="txt">Ton carnet vit sur cet appareil uniquement : ce que tu saisis ici n'apparaît pas sur ton ordinateur
+        ou sur un autre téléphone. Pour passer de l'un à l'autre, sauvegarde ici, puis ouvre l'appli sur le nouvel appareil
+        et restaure le fichier.</p>
     </div>
 
     <h3>Faire passer le mot</h3>
@@ -922,6 +943,7 @@ function afficherAccueil() {
   var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
   var standalone = window.navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
   document.getElementById("ios-safari").hidden = !(ios && !standalone);
+  document.getElementById("installer").hidden = standalone;
 }
 
 document.getElementById("a-go").addEventListener("click", function () {
